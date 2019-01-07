@@ -4,6 +4,20 @@ pytorch version of the SiameseRPN tracker descirbed in the paper "High Performan
 
 This repository includes training and tracking codes. 
 
+Data preparation:
+
+python bin/create_dataset.py --data-dir /dataset_ssd/ILSVRC2015 --output-dir /dataset_ssd/vid15rpn_finetune
+
+python bin/create_lmdb.py --data-dir /dataset_ssd/vid15rpn_finetune --output-dir /dataset_ssd/vid15rpn_finetune.lmdb
+
+Traing phase:
+
+CUDA_VISIBLE_DEVICES=2 python bin/train_siamfc.py --data_dir /dataset_ssd/vid15rpn_large
+
+Test phase:
+
+CUDA_VISIBLE_DEVICES=2 python bin/test_OTB.py -ms ./models/siamrpn_* -v cvpr2013
+
 python version == 3.6.5
 
 pytorch version == 0.4.0
