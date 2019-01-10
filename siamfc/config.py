@@ -19,7 +19,7 @@ class Config:
 
     start_lr = 3e-2
     end_lr = 1e-5
-    warm_epoch = 1
+    warm_epoch = 2
     warm_lr = 1e-4
     warm_scale = warm_lr/start_lr
     epoch = 50
@@ -47,7 +47,7 @@ class Config:
     num_neg = 48
     lamb = 1
     save_interval = 1
-    show_interval = 100
+    show_interval = 5
     pretrained_model = '/mnt/usershare/zrq/pytorch/lab/model/zhangruiqi/finaltry/sharedata/SiamRPNOTB.model'
 
     # tracking related

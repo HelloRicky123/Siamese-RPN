@@ -76,12 +76,12 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
     #     vis = visual(port=6008)
     #     vis.plot_img(show_img.transpose(2, 0, 1), win=2, name='anchors')
     #     time.sleep(2)
-    #
     #     num_pos = len(np.where(conf_target == 1)[0])
     #     if num_pos in dic_num.keys():
     #         dic_num[num_pos] = dic_num[num_pos] + 1
     #     else:
     #         dic_num[num_pos] = 1
+    # embed()
 
     valid_dataset = ImagnetVIDDataset(db, valid_videos, data_dir,
                                       valid_z_transforms, valid_x_transforms, training=False)
@@ -123,13 +123,19 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
         for k, v in model.named_parameters():
             if k in keys_former3conv:
                 v.requires_grad = False
+        freeze_bn = [1, 5, 9]
+        for layer in freeze_bn:
+            model.featureExtract[layer].track_running_stats = False
         del checkpoint
         torch.cuda.empty_cache()
         print("pre inited checkpoint")
     if model_path and init:
         print("init checkpoint %s" % model_path)
         checkpoint = torch.load(model_path)
-        model.load_state_dict(checkpoint['model'])
+        if 'model' in checkpoint.keys():
+            model.load_state_dict(checkpoint['model'])
+        else:
+            model.load_state_dict(checkpoint)
         del checkpoint
         torch.cuda.empty_cache()
         print("inited checkpoint")

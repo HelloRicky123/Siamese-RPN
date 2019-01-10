@@ -170,73 +170,71 @@ class ImagnetVIDDataset(Dataset):
 
             regression_target, conf_target = self.compute_target(self.anchors, np.array([gt_cx, gt_cy, gt_w, gt_h]))
 
-            # img = instance_img.numpy().transpose(1, 2, 0)
-            # pos_index = np.where(conf_target == 1)[0]
-            # pos_anchor = self.anchors[pos_index]
-            # frame = add_box_img(img, pos_anchor)
-            # frame = add_box_img(frame, np.array([[gt_cx, gt_cy, gt_w, gt_h]]), color=(0, 255, 255))
+            img = instance_img.numpy().transpose(1, 2, 0)
+            pos_index = np.where(conf_target == 1)[0]
+            pos_anchor = self.anchors[pos_index]
+            frame = add_box_img(img, pos_anchor)
+            frame = add_box_img(frame, np.array([[gt_cx, gt_cy, gt_w, gt_h]]), color=(0, 255, 255))
 
-            #
-            # # debug the gt_box with original box
-            # title = instance_name.split('/')[-1]
-            # img = instance_img.numpy().transpose(1, 2, 0)
-            # box = np.array([gt_cx, gt_cy, gt_w, gt_h])[None, :]
-            # frame = add_box_img(img, box)
-            # if 'train' in instance_name:
-            #     img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
-            #     img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/train/ILSVRC2015_VID_train_*/'
-            #                          + video + '/' + img_name)[0]
-            #     xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/train/ILSVRC2015_VID_train_*/'
-            #                          + video + '/' + img_name[:6] + '*')[0]
-            #     tree = ET.parse(xml_path)
-            #     root = tree.getroot()
-            #     bboxes = []
-            #     image = cv2.imread(img_path)
-            #     for obj in root.iter('object'):
-            #         bbox = obj.find('bndbox')
-            #         bbox = list(map(int, [bbox.find('xmin').text,
-            #                               bbox.find('ymin').text,
-            #                               bbox.find('xmax').text,
-            #                               bbox.find('ymax').text]))
-            #         x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
-            #         y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
-            #         w = bbox[2] - bbox[0]
-            #         h = bbox[3] - bbox[1]
-            #         bbox = [x_ctr, y_ctr, w, h]
-            #         bboxes.append(bbox)
-            #     frame2 = add_box_img(image, bboxes)
-            #     frame = frame[:, :, ::-1]
-            #     show_img = np.hstack(
-            #         [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
-            #          frame2])
-            # else:
-            #     img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
-            #     img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/val/'
-            #                          + video + '/' + img_name)[0]
-            #     xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/val/'
-            #                          + video + '/' + img_name[:6] + '*')[0]
-            #     tree = ET.parse(xml_path)
-            #     root = tree.getroot()
-            #     bboxes = []
-            #     image = cv2.imread(img_path)
-            #     for obj in root.iter('object'):
-            #         bbox = obj.find('bndbox')
-            #         bbox = list(map(int, [bbox.find('xmin').text,
-            #                               bbox.find('ymin').text,
-            #                               bbox.find('xmax').text,
-            #                               bbox.find('ymax').text]))
-            #         x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
-            #         y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
-            #         w = bbox[2] - bbox[0]
-            #         h = bbox[3] - bbox[1]
-            #         box = [x_ctr, y_ctr, w, h]
-            #         bboxes.append(box)
-            #     frame2 = add_box_img(image, bboxes)
-            #     frame = frame[:, :, ::-1]
-            #     show_img = np.hstack(
-            #         [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
-            #          frame2])
-            # embed()
+            # debug the gt_box with original box
+            title = instance_name.split('/')[-1]
+            img = instance_img.numpy().transpose(1, 2, 0)
+            box = np.array([gt_cx, gt_cy, gt_w, gt_h])[None, :]
+            frame = add_box_img(img, box)
+            if 'train' in instance_name:
+                img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
+                img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/train/ILSVRC2015_VID_train_*/'
+                                     + video + '/' + img_name)[0]
+                xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/train/ILSVRC2015_VID_train_*/'
+                                     + video + '/' + img_name[:6] + '*')[0]
+                tree = ET.parse(xml_path)
+                root = tree.getroot()
+                bboxes = []
+                image = cv2.imread(img_path)
+                for obj in root.iter('object'):
+                    bbox = obj.find('bndbox')
+                    bbox = list(map(int, [bbox.find('xmin').text,
+                                          bbox.find('ymin').text,
+                                          bbox.find('xmax').text,
+                                          bbox.find('ymax').text]))
+                    x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
+                    y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
+                    w = bbox[2] - bbox[0]
+                    h = bbox[3] - bbox[1]
+                    bbox = [x_ctr, y_ctr, w, h]
+                    bboxes.append(bbox)
+                frame2 = add_box_img(image, np.array(bboxes))
+                frame = frame[:, :, ::-1]
+                show_img = np.hstack(
+                    [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
+                     frame2])
+            else:
+                img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
+                img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/val/'
+                                     + video + '/' + img_name)[0]
+                xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/val/'
+                                     + video + '/' + img_name[:6] + '*')[0]
+                tree = ET.parse(xml_path)
+                root = tree.getroot()
+                bboxes = []
+                image = cv2.imread(img_path)
+                for obj in root.iter('object'):
+                    bbox = obj.find('bndbox')
+                    bbox = list(map(int, [bbox.find('xmin').text,
+                                          bbox.find('ymin').text,
+                                          bbox.find('xmax').text,
+                                          bbox.find('ymax').text]))
+                    x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
+                    y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
+                    w = bbox[2] - bbox[0]
+                    h = bbox[3] - bbox[1]
+                    box = [x_ctr, y_ctr, w, h]
+                    bboxes.append(box)
+                frame2 = add_box_img(image, np.array(bboxes))
+                frame = frame[:, :, ::-1]
+                show_img = np.hstack(
+                    [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
+                     frame2])
             # cv2.imshow('gt_box.jpg', show_img)
             # cv2.waitKey(30)
 
@@ -244,7 +242,12 @@ class ImagnetVIDDataset(Dataset):
                 break
             else:
                 idx = np.random.randint(self.num)
-        return exemplar_img, instance_img, regression_target, conf_target.astype(np.int64)
+        return exemplar_img, instance_img, regression_target, conf_target.astype(np.int64),show_img
+
+    def cal_size(self, w, h):
+        t = (w + h) / 2
+        size = np.sqrt((w + t) * (h + t))
+        return size
 
     def draw_img(self, img, boxes, name='1.jpg', color=(0, 255, 0)):
         # boxes (x,y,w,h)
