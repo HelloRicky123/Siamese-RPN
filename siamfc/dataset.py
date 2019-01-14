@@ -40,6 +40,8 @@ class ImagnetVIDDataset(Dataset):
         self.max_stretch = config.scale_resize
         self.max_translate = config.max_translate
         self.random_crop_size = config.instance_size
+        self.center_crop_size = config.exemplar_size
+
         self.training = training
 
         valid_scope = 2 * config.valid_scope + 1
@@ -69,46 +71,108 @@ class ImagnetVIDDataset(Dataset):
     def RandomStretch(self, sample, gt_w, gt_h):
         scale_h = 1.0 + np.random.uniform(-self.max_stretch, self.max_stretch)
         scale_w = 1.0 + np.random.uniform(-self.max_stretch, self.max_stretch)
+        h, w = sample.shape[:2]
+        shape = int(w * scale_w), int(h * scale_h)
+        scale_w = int(w * scale_w) / w
+        scale_h = int(h * scale_h) / h
         gt_w = gt_w * scale_w
         gt_h = gt_h * scale_h
-        return cv2.resize(sample, None, fx=scale_w, fy=scale_h, interpolation=cv2.INTER_LINEAR), gt_w, gt_h
+        return cv2.resize(sample, shape, cv2.INTER_LINEAR), gt_w, gt_h
+
+    def CenterCrop(self, sample, ):
+        im_h, im_w, _ = sample.shape
+        cy = (im_h - 1) / 2
+        cx = (im_w - 1) / 2
+
+        ymin = cy - self.center_crop_size / 2 + 1 / 2
+        xmin = cx - self.center_crop_size / 2 + 1 / 2
+        ymax = ymin + self.center_crop_size - 1
+        xmax = xmin + self.center_crop_size - 1
+
+        left = int(round(max(0., -xmin)))
+        top = int(round(max(0., -ymin)))
+        right = int(round(max(0., xmax - im_w + 1)))
+        bottom = int(round(max(0., ymax - im_h + 1)))
+
+        xmin = int(round(xmin + left))
+        xmax = int(round(xmax + left))
+        ymin = int(round(ymin + top))
+        ymax = int(round(ymax + top))
+
+        r, c, k = sample.shape
+        if any([top, bottom, left, right]):
+            img_mean = tuple(map(int, sample.mean(axis=(0, 1))))
+            te_im = np.zeros((r + top + bottom, c + left + right, k), np.uint8)  # 0 is better than 1 initialization
+            te_im[top:top + r, left:left + c, :] = sample
+            if top:
+                te_im[0:top, left:left + c, :] = img_mean
+            if bottom:
+                te_im[r + top:, left:left + c, :] = img_mean
+            if left:
+                te_im[:, 0:left, :] = img_mean
+            if right:
+                te_im[:, c + left:, :] = img_mean
+            im_patch_original = te_im[int(ymin):int(ymax + 1), int(xmin):int(xmax + 1), :]
+        else:
+            im_patch_original = sample[int(ymin):int(ymax + 1), int(xmin):int(xmax + 1), :]
+
+        if not np.array_equal(im_patch_original.shape[:2], (self.center_crop_size, self.center_crop_size)):
+            im_patch = cv2.resize(im_patch_original,
+                                  (self.center_crop_size, self.center_crop_size))  # zzp: use cv to get a better speed
+        else:
+            im_patch = im_patch_original
+        return im_patch
 
     def RandomCrop(self, sample, ):
-        shape = sample.shape[:2]
-        cy_o = (shape[0] - 1) // 2
-        cx_o = (shape[1] - 1) // 2
+        im_h, im_w, _ = sample.shape
+        cy_o = (im_h - 1) / 2
+        cx_o = (im_w - 1) / 2
         cy = np.random.randint(cy_o - self.max_translate,
                                cy_o + self.max_translate + 1)
         cx = np.random.randint(cx_o - self.max_translate,
                                cx_o + self.max_translate + 1)
-        assert abs(cy - cy_o) <= self.max_translate and \
-               abs(cx - cx_o) <= self.max_translate
+        # assert abs(cy - cy_o) <= self.max_translate and \
+        #        abs(cx - cx_o) <= self.max_translate
         gt_cx = cx_o - cx
         gt_cy = cy_o - cy
 
-        ymin = cy - self.random_crop_size // 2
-        xmin = cx - self.random_crop_size // 2
-        ymax = cy + self.random_crop_size // 2 + self.random_crop_size % 2
-        xmax = cx + self.random_crop_size // 2 + self.random_crop_size % 2
-        left = right = top = bottom = 0
-        im_h, im_w = shape
-        if xmin < 0:
-            left = int(abs(xmin))
-        if xmax > im_w:
-            right = int(xmax - im_w)
-        if ymin < 0:
-            top = int(abs(ymin))
-        if ymax > im_h:
-            bottom = int(ymax - im_h)
+        ymin = cy - self.random_crop_size / 2 + 1 / 2
+        xmin = cx - self.random_crop_size / 2 + 1 / 2
+        ymax = ymin + self.random_crop_size - 1
+        xmax = xmin + self.random_crop_size - 1
 
-        xmin = int(max(0, xmin))
-        xmax = int(min(im_w, xmax))
-        ymin = int(max(0, ymin))
-        ymax = int(min(im_h, ymax))
-        im_patch = sample[ymin:ymax, xmin:xmax]
-        if left != 0 or right != 0 or top != 0 or bottom != 0:
-            im_patch = cv2.copyMakeBorder(im_patch, top, bottom, left, right,
-                                          cv2.BORDER_CONSTANT, value=0)
+        left = int(round(max(0., -xmin)))
+        top = int(round(max(0., -ymin)))
+        right = int(round(max(0., xmax - im_w + 1)))
+        bottom = int(round(max(0., ymax - im_h + 1)))
+
+        xmin = int(round(xmin + left))
+        xmax = int(round(xmax + left))
+        ymin = int(round(ymin + top))
+        ymax = int(round(ymax + top))
+
+        r, c, k = sample.shape
+        if any([top, bottom, left, right]):
+            img_mean = tuple(map(int, sample.mean(axis=(0, 1))))
+            te_im = np.zeros((r + top + bottom, c + left + right, k), np.uint8)  # 0 is better than 1 initialization
+            te_im[top:top + r, left:left + c, :] = sample
+            if top:
+                te_im[0:top, left:left + c, :] = img_mean
+            if bottom:
+                te_im[r + top:, left:left + c, :] = img_mean
+            if left:
+                te_im[:, 0:left, :] = img_mean
+            if right:
+                te_im[:, c + left:, :] = img_mean
+            im_patch_original = te_im[int(ymin):int(ymax + 1), int(xmin):int(xmax + 1), :]
+        else:
+            im_patch_original = sample[int(ymin):int(ymax + 1), int(xmin):int(xmax + 1), :]
+
+        if not np.array_equal(im_patch_original.shape[:2], (self.random_crop_size, self.random_crop_size)):
+            im_patch = cv2.resize(im_patch_original,
+                                  (self.random_crop_size, self.random_crop_size))  # zzp: use cv to get a better speed
+        else:
+            im_patch = im_patch_original
         return im_patch, gt_cx, gt_cy
 
     def compute_target(self, anchors, box):
@@ -143,7 +207,7 @@ class ImagnetVIDDataset(Dataset):
             exemplar_name = \
                 glob.glob(os.path.join(self.data_dir, video, traj[exemplar_idx] + ".{:02d}.x*.jpg".format(trkid)))[0]
             exemplar_img = self.imread(exemplar_name)
-            exemplar_img = cv2.cvtColor(exemplar_img, cv2.COLOR_BGR2RGB)
+            # exemplar_img = cv2.cvtColor(exemplar_img, cv2.COLOR_BGR2RGB)
             # sample instance
             low_idx = max(0, exemplar_idx - config.frame_range)
             up_idx = min(len(traj), exemplar_idx + config.frame_range)
@@ -154,7 +218,7 @@ class ImagnetVIDDataset(Dataset):
             instance = np.random.choice(traj[low_idx:exemplar_idx] + traj[exemplar_idx + 1:up_idx], p=weights)
             instance_name = glob.glob(os.path.join(self.data_dir, video, instance + ".{:02d}.x*.jpg".format(trkid)))[0]
             instance_img = self.imread(instance_name)
-            instance_img = cv2.cvtColor(instance_img, cv2.COLOR_BGR2RGB)
+            # instance_img = cv2.cvtColor(instance_img, cv2.COLOR_BGR2RGB)
             gt_w, gt_h = float(instance_name.split('_')[-2]), float(instance_name.split('_')[-1][:-4])
 
             if np.random.rand(1) < config.gray_ratio:
@@ -162,79 +226,81 @@ class ImagnetVIDDataset(Dataset):
                 exemplar_img = cv2.cvtColor(exemplar_img, cv2.COLOR_GRAY2RGB)
                 instance_img = cv2.cvtColor(instance_img, cv2.COLOR_RGB2GRAY)
                 instance_img = cv2.cvtColor(instance_img, cv2.COLOR_GRAY2RGB)
-
+            exemplar_img, _, _ = self.RandomStretch(exemplar_img, 0, 0)
+            exemplar_img = self.CenterCrop(exemplar_img, )
             exemplar_img = self.z_transforms(exemplar_img)
             instance_img, gt_w, gt_h = self.RandomStretch(instance_img, gt_w, gt_h)
             instance_img, gt_cx, gt_cy = self.RandomCrop(instance_img, )
             instance_img = self.x_transforms(instance_img)
+            regression_target, conf_target = self.compute_target(self.anchors,
+                                                                 np.array(list(map(round, [gt_cx, gt_cy, gt_w, gt_h]))))
 
-            regression_target, conf_target = self.compute_target(self.anchors, np.array([gt_cx, gt_cy, gt_w, gt_h]))
-
-            img = instance_img.numpy().transpose(1, 2, 0)
-            pos_index = np.where(conf_target == 1)[0]
-            pos_anchor = self.anchors[pos_index]
-            frame = add_box_img(img, pos_anchor)
-            frame = add_box_img(frame, np.array([[gt_cx, gt_cy, gt_w, gt_h]]), color=(0, 255, 255))
-
-            # debug the gt_box with original box
-            title = instance_name.split('/')[-1]
-            img = instance_img.numpy().transpose(1, 2, 0)
-            box = np.array([gt_cx, gt_cy, gt_w, gt_h])[None, :]
-            frame = add_box_img(img, box)
-            if 'train' in instance_name:
-                img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
-                img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/train/ILSVRC2015_VID_train_*/'
-                                     + video + '/' + img_name)[0]
-                xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/train/ILSVRC2015_VID_train_*/'
-                                     + video + '/' + img_name[:6] + '*')[0]
-                tree = ET.parse(xml_path)
-                root = tree.getroot()
-                bboxes = []
-                image = cv2.imread(img_path)
-                for obj in root.iter('object'):
-                    bbox = obj.find('bndbox')
-                    bbox = list(map(int, [bbox.find('xmin').text,
-                                          bbox.find('ymin').text,
-                                          bbox.find('xmax').text,
-                                          bbox.find('ymax').text]))
-                    x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
-                    y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
-                    w = bbox[2] - bbox[0]
-                    h = bbox[3] - bbox[1]
-                    bbox = [x_ctr, y_ctr, w, h]
-                    bboxes.append(bbox)
-                frame2 = add_box_img(image, np.array(bboxes))
-                frame = frame[:, :, ::-1]
-                show_img = np.hstack(
-                    [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
-                     frame2])
-            else:
-                img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
-                img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/val/'
-                                     + video + '/' + img_name)[0]
-                xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/val/'
-                                     + video + '/' + img_name[:6] + '*')[0]
-                tree = ET.parse(xml_path)
-                root = tree.getroot()
-                bboxes = []
-                image = cv2.imread(img_path)
-                for obj in root.iter('object'):
-                    bbox = obj.find('bndbox')
-                    bbox = list(map(int, [bbox.find('xmin').text,
-                                          bbox.find('ymin').text,
-                                          bbox.find('xmax').text,
-                                          bbox.find('ymax').text]))
-                    x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
-                    y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
-                    w = bbox[2] - bbox[0]
-                    h = bbox[3] - bbox[1]
-                    box = [x_ctr, y_ctr, w, h]
-                    bboxes.append(box)
-                frame2 = add_box_img(image, np.array(bboxes))
-                frame = frame[:, :, ::-1]
-                show_img = np.hstack(
-                    [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
-                     frame2])
+            # img = instance_img.numpy().transpose(1, 2, 0)
+            # pos_index = np.where(conf_target == 1)[0]
+            # pos_anchor = self.anchors[pos_index]
+            # frame = add_box_img(img, pos_anchor)
+            # frame = add_box_img(frame, np.array([[gt_cx, gt_cy, gt_w, gt_h]]), color=(0, 255, 255))
+            #
+            # # debug the gt_box with original box
+            # title = instance_name.split('/')[-1]
+            # img = instance_img.numpy().transpose(1, 2, 0)
+            # box = np.array([gt_cx, gt_cy, gt_w, gt_h])[None, :]
+            # frame = add_box_img(img, box)
+            # if 'train' in instance_name:
+            #     img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
+            #     img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/train/ILSVRC2015_VID_train_*/'
+            #                          + video + '/' + img_name)[0]
+            #     xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/train/ILSVRC2015_VID_train_*/'
+            #                          + video + '/' + img_name[:6] + '*')[0]
+            #     tree = ET.parse(xml_path)
+            #     root = tree.getroot()
+            #     bboxes = []
+            #     image = cv2.imread(img_path)
+            #     for obj in root.iter('object'):
+            #         bbox = obj.find('bndbox')
+            #         bbox = list(map(int, [bbox.find('xmin').text,
+            #                               bbox.find('ymin').text,
+            #                               bbox.find('xmax').text,
+            #                               bbox.find('ymax').text]))
+            #         x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
+            #         y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
+            #         w = bbox[2] - bbox[0]
+            #         h = bbox[3] - bbox[1]
+            #         bbox = [x_ctr, y_ctr, w, h]
+            #         bboxes.append(bbox)
+            #     frame2 = add_box_img(image, np.array(bboxes))
+            #     frame = frame[:, :, ::-1]
+            #     show_img = np.hstack(
+            #         [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
+            #          frame2])
+            # else:
+            #     img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
+            #     img_path = glob.glob('/dataset_ssd/ILSVRC2015/Data/VID/val/'
+            #                          + video + '/' + img_name)[0]
+            #     xml_path = glob.glob('/dataset_ssd/ILSVRC2015/Annotations/VID/val/'
+            #                          + video + '/' + img_name[:6] + '*')[0]
+            #     tree = ET.parse(xml_path)
+            #     root = tree.getroot()
+            #     bboxes = []
+            #     image = cv2.imread(img_path)
+            #     for obj in root.iter('object'):
+            #         bbox = obj.find('bndbox')
+            #         bbox = list(map(int, [bbox.find('xmin').text,
+            #                               bbox.find('ymin').text,
+            #                               bbox.find('xmax').text,
+            #                               bbox.find('ymax').text]))
+            #         x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
+            #         y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
+            #         w = bbox[2] - bbox[0]
+            #         h = bbox[3] - bbox[1]
+            #         box = [x_ctr, y_ctr, w, h]
+            #         bboxes.append(box)
+            #     frame2 = add_box_img(image, np.array(bboxes))
+            #     frame = frame[:, :, ::-1]
+            #     show_img = np.hstack(
+            #         [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
+            #          frame2])
+            # embed()
             # cv2.imshow('gt_box.jpg', show_img)
             # cv2.waitKey(30)
 
@@ -242,18 +308,13 @@ class ImagnetVIDDataset(Dataset):
                 break
             else:
                 idx = np.random.randint(self.num)
-        return exemplar_img, instance_img, regression_target, conf_target.astype(np.int64),show_img
-
-    def cal_size(self, w, h):
-        t = (w + h) / 2
-        size = np.sqrt((w + t) * (h + t))
-        return size
+        return exemplar_img, instance_img, regression_target, conf_target.astype(np.int64)
 
     def draw_img(self, img, boxes, name='1.jpg', color=(0, 255, 0)):
         # boxes (x,y,w,h)
         img = img.copy()
-        img_ctx = (img.shape[1] + 1) / 2
-        img_cty = (img.shape[0] + 1) / 2
+        img_ctx = (img.shape[1] - 1) / 2
+        img_cty = (img.shape[0] - 1) / 2
         for box in boxes:
             point_1 = img_ctx - box[2] / 2 + box[0], img_cty - box[3] / 2 + box[1]
             point_2 = img_ctx + box[2] / 2 + box[0], img_cty + box[3] / 2 + box[1]

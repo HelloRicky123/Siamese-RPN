@@ -25,10 +25,12 @@ def rpn_cross_entropy_balance(input, target, num_pos, num_neg):
     :param target: (15x15x5,)
     :return:
     """
-    pos_index = np.random.choice(np.where(target.cpu().flatten() == 1)[0], target.shape[0] * num_pos)
-    neg_index = np.random.choice(np.where(target.cpu().flatten() == 0)[0], target.shape[0] * num_neg)
-    cal_index = np.append(neg_index, pos_index)
-
+    cal_index = np.array([], dtype=np.int64)
+    for batch_id in range(target.shape[0]):
+        pos_index = np.random.choice(np.where(target[batch_id].cpu() == 1)[0], num_pos)
+        neg_index = np.random.choice(np.where(target[batch_id].cpu() == 0)[0], num_neg)
+        cal_index = np.append(cal_index, batch_id * target.shape[1] + pos_index)
+        cal_index = np.append(cal_index, batch_id * target.shape[1] + neg_index)
     loss = F.cross_entropy(input=input.reshape(-1, 2)[cal_index], target=target.flatten()[cal_index])
     return loss
 

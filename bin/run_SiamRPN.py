@@ -34,14 +34,15 @@ def run_SiamRPN(seq_path, model_path, init_box):
     tic = time.clock()
     for idx, frame in tqdm(enumerate(frames), total=len(frames)):
         frame = cv2.imread(frame)
+        # frame = cv2.cvtColor(cv2.imread(frame), cv2.COLOR_BGR2RGB)
         if idx == 0:
             tracker.init(frame, init_box)
-            bbox = (x + w / 2, y + h / 2, w, h)
-            bbox = np.array(bbox).astype(np.float64) + [1, 1, 0, 0]
+            bbox = (x + w / 2 - 1 / 2, y + h / 2 - 1 / 2, w, h)
+            bbox = np.array(bbox).astype(np.float64)
         else:
             bbox, score = tracker.update(frame)  # x,y,w,h
-            bbox = np.array(bbox) + [1, 1, 0, 0]
-        res.append(list((bbox[0] - bbox[2] / 2, bbox[1] - bbox[3] / 2, bbox[2], bbox[3])))
+            bbox = np.array(bbox)
+        res.append(list((bbox[0] - bbox[2] / 2 + 1 / 2, bbox[1] - bbox[3] / 2 + 1 / 2, bbox[2], bbox[3])))
     duration = time.clock() - tic
     result = {}
     result['res'] = res

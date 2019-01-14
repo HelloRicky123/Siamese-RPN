@@ -48,15 +48,12 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
 
     # define transforms
     train_z_transforms = transforms.Compose([
-        RandomStretch(config.scale_resize),
-        CenterCrop((config.exemplar_size, config.exemplar_size)),
         ToTensor()
     ])
     train_x_transforms = transforms.Compose([
         ToTensor()
     ])
     valid_z_transforms = transforms.Compose([
-        CenterCrop((config.exemplar_size, config.exemplar_size)),
         ToTensor()
     ])
     valid_x_transforms = transforms.Compose([
@@ -67,20 +64,19 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
     db = lmdb.open(data_dir + '.lmdb', readonly=True, map_size=int(50e9))
 
     # create dataset
-    train_dataset = ImagnetVIDDataset(db, train_videos, data_dir,
-                                      train_z_transforms, train_x_transforms)
+    train_dataset = ImagnetVIDDataset(db, train_videos, data_dir, train_z_transforms, train_x_transforms)
     # debug dataset
     # dic_num = {}
     # for i in tqdm(range(len(train_dataset))):
     #     exemplar_img, instance_img, regression_target, conf_target, show_img = train_dataset[i]
-    #     vis = visual(port=6008)
-    #     vis.plot_img(show_img.transpose(2, 0, 1), win=2, name='anchors')
-    #     time.sleep(2)
-    #     num_pos = len(np.where(conf_target == 1)[0])
-    #     if num_pos in dic_num.keys():
-    #         dic_num[num_pos] = dic_num[num_pos] + 1
-    #     else:
-    #         dic_num[num_pos] = 1
+        # vis = visual(port=6008)
+        # vis.plot_img(show_img.transpose(2, 0, 1), win=2, name='anchors')
+        # time.sleep(2)
+        # num_pos = len(np.where(conf_target == 1)[0])
+        # if num_pos in dic_num.keys():
+        #     dic_num[num_pos] = dic_num[num_pos] + 1
+        # else:
+        #     dic_num[num_pos] = 1
     # embed()
 
     valid_dataset = ImagnetVIDDataset(db, valid_videos, data_dir,
@@ -175,7 +171,6 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
                     0,
                     2,
                     1)
-
                 cls_loss = rpn_cross_entropy_balance(pred_conf, conf_target, config.num_pos, config.num_neg)
                 reg_loss = rpn_smoothL1(pred_offset, regression_target, conf_target)
                 loss = cls_loss + config.lamb * reg_loss
@@ -383,7 +378,6 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
             cls_loss = rpn_cross_entropy_balance(pred_conf, conf_target, config.num_pos, config.num_neg)
             reg_loss = rpn_smoothL1(pred_offset, regression_target, conf_target)
             loss = cls_loss + config.lamb * reg_loss
-
             valid_loss.append(loss.detach().cpu())
         valid_loss = np.mean(valid_loss)
         print("EPOCH %d valid_loss: %.4f, train_loss: %.4f" % (epoch, valid_loss, train_loss))

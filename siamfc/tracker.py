@@ -53,16 +53,16 @@ class SiamRPNTracker:
             bbox: one-based bounding box [x, y, width, height]
         """
         self.pos = np.array(
-            [bbox[0] + bbox[2] // 2, bbox[1] + bbox[3] // 2])  # center x, center y, zero based
+            [bbox[0] + bbox[2] / 2 - 1 / 2, bbox[1] + bbox[3] / 2 - 1 / 2])  # center x, center y, zero based
         self.target_sz = np.array([bbox[2], bbox[3]])  # width, height
-        self.bbox = np.array([bbox[0] + bbox[2] // 2, bbox[1] + bbox[3] // 2, bbox[2], bbox[3]])
+        self.bbox = np.array([bbox[0] + bbox[2] / 2 - 1 / 2, bbox[1] + bbox[3] / 2 - 1 / 2, bbox[2], bbox[3]])
 
         self.origin_target_sz = np.array([bbox[2], bbox[3]])
         # get exemplar img
         self.img_mean = np.mean(frame, axis=(0, 1))
 
-        exemplar_img, scale_z, s_z = get_exemplar_image(frame, self.bbox,
-                                                        config.exemplar_size, config.context_amount, self.img_mean)
+        exemplar_img, _, _ = get_exemplar_image(frame, self.bbox,
+                                                config.exemplar_size, config.context_amount, self.img_mean)
         # get exemplar feature
         exemplar_img = self.transforms(exemplar_img)[None, :, :, :]
         self.model.track_init(exemplar_img.cuda())
@@ -75,7 +75,7 @@ class SiamRPNTracker:
         Returns:
             bbox: tuple of 1-based bounding box(xmin, ymin, xmax, ymax)
         """
-        instance_img, _, _, scale_z = get_instance_image(frame, self.bbox, config.exemplar_size,
+        instance_img, _, _, scale_x = get_instance_image(frame, self.bbox, config.exemplar_size,
                                                          config.instance_size,
                                                          config.context_amount, self.img_mean)
         instance_img = self.transforms(instance_img)[None, :, :, :]
@@ -105,13 +105,13 @@ class SiamRPNTracker:
             sz2 = (wh[0] + pad) * (wh[1] + pad)
             return np.sqrt(sz2)
 
-        s_c = change(sz(box_pred[:, 2], box_pred[:, 3]) / (sz_wh(self.target_sz * scale_z)))  # scale penalty
+        s_c = change(sz(box_pred[:, 2], box_pred[:, 3]) / (sz_wh(self.target_sz * scale_x)))  # scale penalty
         r_c = change((self.target_sz[0] / self.target_sz[1]) / (box_pred[:, 2] / box_pred[:, 3]))  # ratio penalty
         penalty = np.exp(-(r_c * s_c - 1.) * config.penalty_k)
         pscore = penalty * score_pred
         pscore = pscore * (1 - config.window_influence) + self.window * config.window_influence
         best_pscore_id = np.argmax(pscore)
-        target = box_pred[best_pscore_id, :] / scale_z
+        target = box_pred[best_pscore_id, :] / scale_x
 
         lr = penalty[best_pscore_id] * score_pred[best_pscore_id] * config.lr_box
 

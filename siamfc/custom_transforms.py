@@ -19,7 +19,7 @@ class RandomStretch(object):
         scale_h = 1.0 + np.random.uniform(-self.max_stretch, self.max_stretch)
         scale_w = 1.0 + np.random.uniform(-self.max_stretch, self.max_stretch)
         h, w = sample.shape[:2]
-        shape = (int(h * scale_h), int(w * scale_w))
+        shape = int(w * scale_w), int(h * scale_h)
         return cv2.resize(sample, shape, cv2.INTER_LINEAR)
 
 

@@ -17,24 +17,22 @@ def xyxy2cxcywh(bbox):
 
 
 def crop_and_pad(img, cx, cy, model_sz, original_sz, img_mean=None):
-    xmin = abs(cx - (original_sz + 1) / 2 + 1e-10) / (cx - (original_sz + 1) / 2 + 1e-10) * round(
-        abs(cx - (original_sz + 1) / 2) + 1e-10)
-    xmax = xmin + original_sz - 1
-    ymin = abs(cy - (original_sz + 1) / 2 + 1e-10) / (cy - (original_sz + 1) / 2 + 1e-10) * round(
-        abs(cy - (original_sz + 1) / 2) + 1e-10)
-    ymax = ymin + original_sz - 1
     im_h, im_w, _ = img.shape
 
-    left = int(max(0., -xmin))
-    top = int(max(0., -ymin))
-    right = int(max(0., xmax - im_w + 1))
-    bottom = int(max(0., ymax - im_h + 1))
+    xmin = cx - (original_sz - 1) / 2
+    xmax = xmin + original_sz - 1
+    ymin = cy - (original_sz - 1) / 2
+    ymax = ymin + original_sz - 1
 
-    xmin = int(xmin + left)
-    xmax = int(xmax + left)
-    ymin = int(ymin + top)
-    ymax = int(ymax + top)
+    left = int(round(max(0., -xmin)))
+    top = int(round(max(0., -ymin)))
+    right = int(round(max(0., xmax - im_w + 1)))
+    bottom = int(round(max(0., ymax - im_h + 1)))
 
+    xmin = int(round(xmin + left))
+    xmax = int(round(xmax + left))
+    ymin = int(round(ymin + top))
+    ymax = int(round(ymax + top))
     r, c, k = img.shape
     if any([top, bottom, left, right]):
         te_im = np.zeros((r + top + bottom, c + left + right, k), np.uint8)  # 0 is better than 1 initialization
@@ -50,43 +48,41 @@ def crop_and_pad(img, cx, cy, model_sz, original_sz, img_mean=None):
         im_patch_original = te_im[int(ymin):int(ymax + 1), int(xmin):int(xmax + 1), :]
     else:
         im_patch_original = img[int(ymin):int(ymax + 1), int(xmin):int(xmax + 1), :]
-
     if not np.array_equal(model_sz, original_sz):
         im_patch = cv2.resize(im_patch_original, (model_sz, model_sz))  # zzp: use cv to get a better speed
     else:
         im_patch = im_patch_original
 
-    return im_patch
+    scale = model_sz / im_patch_original.shape[0]
+    return im_patch, scale
 
 
 def get_exemplar_image(img, bbox, size_z, context_amount, img_mean=None):
     cx, cy, w, h = bbox
     wc_z = w + context_amount * (w + h)
     hc_z = h + context_amount * (w + h)
-    s_z = round(np.sqrt(wc_z * hc_z) + 1e-10)
+    s_z = np.sqrt(wc_z * hc_z)
     scale_z = size_z / s_z
-    exemplar_img = crop_and_pad(img, cx, cy, size_z, s_z, img_mean)
+    exemplar_img, _ = crop_and_pad(img, cx, cy, size_z, s_z, img_mean)
     return exemplar_img, scale_z, s_z
 
 
 def get_instance_image(img, bbox, size_z, size_x, context_amount, img_mean=None):
-    cx, cy, w, h = bbox
+    cx, cy, w, h = bbox  # float type
     wc_z = w + context_amount * (w + h)
     hc_z = h + context_amount * (w + h)
     s_z = np.sqrt(wc_z * hc_z)  # the width of the crop box
     scale_z = size_z / s_z
-    d_search = (size_x - size_z) / 2
-    pad = d_search / scale_z
-    s_x = round(s_z + 2 * pad + 1e-10)
-    scale_x = size_x / s_x
-    instance_img = crop_and_pad(img, cx, cy, size_x, s_x, img_mean)
+
+    s_x = s_z * size_x / size_z
+    instance_img, scale_x = crop_and_pad(img, cx, cy, size_x, s_x, img_mean)
     w_x = w * scale_x
     h_x = h * scale_x
     # point_1 = (size_x + 1) / 2 - w_x / 2, (size_x + 1) / 2 - h_x / 2
     # point_2 = (size_x + 1) / 2 + w_x / 2, (size_x + 1) / 2 + h_x / 2
     # frame = cv2.rectangle(instance_img, (int(point_1[0]),int(point_1[1])), (int(point_2[0]),int(point_2[1])), (0, 255, 0), 2)
     # cv2.imwrite('1.jpg', frame)
-    return instance_img, w_x, h_x, scale_z
+    return instance_img, w_x, h_x, scale_x
 
 
 def box_transform(anchors, gt_box):
@@ -171,11 +167,11 @@ def add_box_img(img, boxes, color=(0, 255, 0)):
     if boxes.ndim == 1:
         boxes = boxes[None, :]
     img = img.copy()
-    img_ctx = (img.shape[1] + 1) / 2
-    img_cty = (img.shape[0] + 1) / 2
+    img_ctx = (img.shape[1] - 1) / 2
+    img_cty = (img.shape[0] - 1) / 2
     for box in boxes:
-        point_1 = [img_ctx - box[2] / 2 + box[0] - 0.5, img_cty - box[3] / 2 + box[1] - 0.5]
-        point_2 = [img_ctx + box[2] / 2 + box[0] + 0.5, img_cty + box[3] / 2 + box[1] + 0.5]
+        point_1 = [img_ctx - box[2] / 2 + box[0] + 0.5, img_cty - box[3] / 2 + box[1] + 0.5]
+        point_2 = [img_ctx + box[2] / 2 + box[0] - 0.5, img_cty + box[3] / 2 + box[1] - 0.5]
         point_1[0] = np.clip(point_1[0], 0, img.shape[1])
         point_2[0] = np.clip(point_2[0], 0, img.shape[1])
         point_1[1] = np.clip(point_1[1], 0, img.shape[0])

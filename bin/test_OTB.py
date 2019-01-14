@@ -37,22 +37,22 @@ def cal_iou(box1, box2):
     """
     x11 = box1[0]
     y11 = box1[1]
-    x21 = box1[0] + box1[2]
-    y21 = box1[1] + box1[3]
-    area_1 = (x21 - x11) * (y21 - y11)
+    x21 = box1[0] + box1[2] - 1
+    y21 = box1[1] + box1[3] - 1
+    area_1 = (x21 - x11 + 1) * (y21 - y11 + 1)
 
     x12 = box2[0]
     y12 = box2[1]
-    x22 = box2[0] + box2[2]
-    y22 = box2[1] + box2[3]
-    area_2 = (x22 - x12) * (y22 - y12)
+    x22 = box2[0] + box2[2] - 1
+    y22 = box2[1] + box2[3] - 1
+    area_2 = (x22 - x12 + 1) * (y22 - y12 + 1)
 
     x_left = max(x11, x12)
     x_right = min(x21, x22)
     y_top = max(y11, y12)
     y_down = min(y21, y22)
 
-    inter_area = max(x_right - x_left, 0) * max(y_down - y_top, 0)
+    inter_area = max(x_right - x_left + 1, 0) * max(y_down - y_top + 1, 0)
     iou = inter_area / (area_1 + area_2 - inter_area)
     return iou
 
@@ -139,8 +139,8 @@ if __name__ == '__main__':
                 boxes = [list(map(int, box.split())) for box in boxes]
             boxes = [np.array(box) - [1, 1, 0, 0] for box in boxes]
             result = run_SiamRPN(video_path, model_path, boxes[0])
-            result_boxes = result['res']
-            results[os.path.abspath(model_path)][video_path.split('/')[-1]] = result_boxes
+            result_boxes = [np.array(box) + [1, 1, 0, 0] for box in result['res']]
+            results[os.path.abspath(model_path)][video_path.split('/')[-1]] = [box.tolist() for box in result_boxes]
 
     # with Pool(processes=mp.cpu_count()) as pool:
     #     for ret in tqdm(pool.imap_unordered(
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     # ------------ starting evaluation  -----------
     data_path = '/dataset_ssd/OTB/data/'
     results_eval = {}
-    for model in sorted(list(results.keys()), key=embeded_numbers_results):
+    for model in sorted(list(results.keys()), ):
         results_eval[model] = {}
         success_all_video = []
         for video in results[model].keys():

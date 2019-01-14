@@ -50,12 +50,12 @@ def worker(output_dir, video_dir):
             instance_crop_size = int(
                 np.ceil((config.instance_size + config.max_translate * 2) * (1 + config.scale_resize)))
             bbox = np.array(
-                [bbox[0] + (bbox[2] - bbox[0]) // 2, bbox[1] + (bbox[3] - bbox[1]) // 2, bbox[2] - bbox[0],
-                 bbox[3] - bbox[1]])
+                [(bbox[2] + bbox[0]) / 2, (bbox[3] + bbox[1]) / 2, bbox[2] - bbox[0] + 1,
+                 bbox[3] - bbox[1] + 1])
 
-            instance_img, w, h = get_instance_image(img, bbox,
-                                                    config.exemplar_size, instance_crop_size, config.context_amount,
-                                                    img_mean)
+            instance_img, w, h, _ = get_instance_image(img, bbox,
+                                                       config.exemplar_size, instance_crop_size, config.context_amount,
+                                                       img_mean)
             instance_img_name = os.path.join(save_folder, filename + ".{:02d}.x_{:.2f}_{:.2f}.jpg".format(trkid, w, h))
             cv2.imwrite(instance_img_name, instance_img)
     return video_name, trajs

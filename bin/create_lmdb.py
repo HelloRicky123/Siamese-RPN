@@ -27,9 +27,7 @@ def worker(video_name):
     return kv
 
 
-def create_lmdb(data_dir='/mnt/datasets/vid/ILSVRC_VID_CURATION',
-                output_dir='/mnt/datasets/vid/ILSVRC_VID_CURATION.lmdb',
-                num_threads=mp.cpu_count()):
+def create_lmdb(data_dir, output_dir, num_threads=mp.cpu_count()):
     video_names = glob(data_dir + '/*')
     video_names = [x for x in video_names if os.path.isdir(x)]
     db = lmdb.open(output_dir, map_size=int(50e9))
