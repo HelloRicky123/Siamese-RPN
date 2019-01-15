@@ -65,22 +65,8 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
 
     # create dataset
     train_dataset = ImagnetVIDDataset(db, train_videos, data_dir, train_z_transforms, train_x_transforms)
-    # debug dataset
-    # dic_num = {}
-    # for i in tqdm(range(len(train_dataset))):
-    #     exemplar_img, instance_img, regression_target, conf_target, show_img = train_dataset[i]
-        # vis = visual(port=6008)
-        # vis.plot_img(show_img.transpose(2, 0, 1), win=2, name='anchors')
-        # time.sleep(2)
-        # num_pos = len(np.where(conf_target == 1)[0])
-        # if num_pos in dic_num.keys():
-        #     dic_num[num_pos] = dic_num[num_pos] + 1
-        # else:
-        #     dic_num[num_pos] = 1
-    # embed()
-
-    valid_dataset = ImagnetVIDDataset(db, valid_videos, data_dir,
-                                      valid_z_transforms, valid_x_transforms, training=False)
+    valid_dataset = ImagnetVIDDataset(db, valid_videos, data_dir, valid_z_transforms, valid_x_transforms,
+                                      training=False)
     # create dataloader
     trainloader = DataLoader(train_dataset, batch_size=config.train_batch_size * torch.cuda.device_count(),
                              shuffle=True, pin_memory=True,
@@ -106,16 +92,19 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
     if config.pretrained_model:
         print("pre init checkpoint %s" % config.pretrained_model)
         checkpoint = torch.load(config.pretrained_model)
+        # change name and load parameters
+        checkpoint = {k.replace('features.features', 'featureExtract'): v for k, v in checkpoint.items()}
         model_dict = model.state_dict()
+        model_dict.update(checkpoint)
+        model.load_state_dict(model_dict)
+
+        # freeze layers
         keys_former3conv = ['featureExtract.0.weight', 'featureExtract.0.bias', 'featureExtract.1.weight',
                             'featureExtract.1.bias', 'featureExtract.1.running_mean', 'featureExtract.1.running_var',
                             'featureExtract.4.weight', 'featureExtract.4.bias', 'featureExtract.5.weight',
                             'featureExtract.5.bias', 'featureExtract.5.running_mean', 'featureExtract.5.running_var',
                             'featureExtract.8.weight', 'featureExtract.8.bias', 'featureExtract.9.weight',
                             'featureExtract.9.bias', 'featureExtract.9.running_mean', 'featureExtract.9.running_var']
-        checkpoint = {k: v for k, v in checkpoint.items() if k in keys_former3conv}
-        model_dict.update(checkpoint)
-        model.load_state_dict(model_dict)
         for k, v in model.named_parameters():
             if k in keys_former3conv:
                 v.requires_grad = False
