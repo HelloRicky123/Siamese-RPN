@@ -12,4 +12,6 @@ CUDA_VISIBLE_DEVICES=2 python bin/test_OTB.py -ms ./models/siamrpn_44.pth -v cvp
 
 The best epoch is about 55.
 
-The ./siamrpn_30.pth is got after 20 epochs' 8e-4 lr and 30 epochs' 1e-2.
+The ./siamrpn_30.pth is got after 20 epochs' 8e-4 lr and 30 epochs' 1e-2. 
+
+链接:https://pan.baidu.com/s/1_syPIBqoH7cChdN3cNInfw  密码:m1kh
