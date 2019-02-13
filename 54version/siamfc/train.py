@@ -102,7 +102,7 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
 
     # start training
     model = SiameseAlexNet()
-    # model.init_weights()
+    model.init_weights()
     model = model.cuda()
     optimizer = torch.optim.SGD(model.parameters(), lr=config.lr,
                                 momentum=config.momentum, weight_decay=config.weight_decay)
@@ -110,37 +110,22 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
     if config.pretrained_model:
         print("pre init checkpoint %s" % config.pretrained_model)
         checkpoint = torch.load(config.pretrained_model)
-        # change name and load parameters
-        checkpoint = {k.replace('features.features', 'featureExtract'): v for k, v in checkpoint.items()}
         model_dict = model.state_dict()
+        keys_former3conv = ['featureExtract.0.weight', 'featureExtract.0.bias', 'featureExtract.4.weight',
+                            'featureExtract.4.bias', 'featureExtract.8.weight', 'featureExtract.8.bias', ]
+        checkpoint = {k: v for k, v in checkpoint.items() if k in keys_former3conv}
         model_dict.update(checkpoint)
         model.load_state_dict(model_dict)
-
-        # freeze layers
-        keys_former3conv = ['featureExtract.0.weight', 'featureExtract.0.bias', 'featureExtract.1.weight',
-                            'featureExtract.1.bias', 'featureExtract.1.running_mean', 'featureExtract.1.running_var',
-                            'featureExtract.4.weight', 'featureExtract.4.bias', 'featureExtract.5.weight',
-                            'featureExtract.5.bias', 'featureExtract.5.running_mean', 'featureExtract.5.running_var',
-                            'featureExtract.8.weight', 'featureExtract.8.bias', 'featureExtract.9.weight',
-                            'featureExtract.9.bias', 'featureExtract.9.running_mean', 'featureExtract.9.running_var']
         for k, v in model.named_parameters():
             if k in keys_former3conv:
                 v.requires_grad = False
-        freeze_bn = [1, 5, 9]
-        for layer in freeze_bn:
-            model.featureExtract[layer].track_running_stats = False
         del checkpoint
         torch.cuda.empty_cache()
         print("pre inited checkpoint")
     if model_path and init:
         print("init checkpoint %s" % model_path)
         checkpoint = torch.load(model_path)
-        if 'model' in checkpoint.keys():
-            model.load_state_dict(checkpoint['model'])
-        else:
-            model_dict = model.state_dict()
-            model_dict.update(checkpoint)
-            model.load_state_dict(model_dict)
+        model.load_state_dict(checkpoint['model'])
         del checkpoint
         torch.cuda.empty_cache()
         print("inited checkpoint")
@@ -180,6 +165,7 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
                     0,
                     2,
                     1)
+
                 cls_loss = rpn_cross_entropy_balance(pred_conf, conf_target, config.num_pos, config.num_neg)
                 reg_loss = rpn_smoothL1(pred_offset, regression_target, conf_target)
                 loss = cls_loss + config.lamb * reg_loss
@@ -296,8 +282,6 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
 
             optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), config.clip)
-
             optimizer.step()
             step = (epoch - 1) * len(trainloader) + i
             summary_writer.add_scalar('train/loss', loss.data, step)
@@ -389,6 +373,7 @@ def train(data_dir, model_path=None, vis_port=None, init=None):
             cls_loss = rpn_cross_entropy_balance(pred_conf, conf_target, config.num_pos, config.num_neg)
             reg_loss = rpn_smoothL1(pred_offset, regression_target, conf_target)
             loss = cls_loss + config.lamb * reg_loss
+
             valid_loss.append(loss.detach().cpu())
         valid_loss = np.mean(valid_loss)
         print("EPOCH %d valid_loss: %.4f, train_loss: %.4f" % (epoch, valid_loss, train_loss))

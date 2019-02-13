@@ -51,8 +51,8 @@ class Config:
     lamb = 1
     save_interval = 1
     show_interval = 100
-    # pretrained_model = '/mnt/usershare/zrq/pytorch/lab/model/zhangruiqi/finaltry/sharedata/SiamRPNOTB.model'
-    pretrained_model = '/mnt/usershare/zrq/pytorch/lab/model/zhangruiqi/finaltry/sharedata/alexnet.pth'
+    pretrained_model = '/mnt/usershare/zrq/pytorch/lab/model/zhangruiqi/finaltry/sharedata/SiamRPNOTB.model'
+    # pretrained_model = '/mnt/usershare/zrq/pytorch/lab/model/zhangruiqi/finaltry/sharedata/alexnet.pth'
 
 
     # tracking related
