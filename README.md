@@ -42,6 +42,10 @@ There are still some bugs in this code getting 0.54 AUC on OTB50, but changing t
 
 3，Use warm epochs to avoid grad explosion, can use grad clip instead.
 
+## update
+
+can get 0.58 auc on otb100 and 0.31 eao on vot2015. 
+
 ## Reference
 
 [1] Li B , Yan J , Wu W , et al. High Performance Visual Tracking with Siamese Region Proposal Network[C]// 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). IEEE, 2018.
