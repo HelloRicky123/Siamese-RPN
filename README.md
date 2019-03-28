@@ -6,6 +6,10 @@ For more details about siameseRPN please refer to the paper : [High Performance 
 
 This repository includes training and tracking codes. 
 
+## News
+
+After use the Youtube-BB dataset, the code can get 0.59 auc on OTB100 and about 0.315 eao on VOT2015. I upload it to the 59version folder. It's trained without warm up.
+
 ## Data preparation:
 
 python bin/create_dataset.py --data-dir /dataset_ssd/ILSVRC2015 --output-dir /dataset_ssd/vid15rpn_finetune
