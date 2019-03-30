@@ -48,7 +48,7 @@ There are still some bugs in this code getting 0.54 AUC on OTB50, but changing t
 
 ## update
 
-can get 0.58 auc on otb100 and 0.31 eao on vot2015. 
+can get 0.605 auc on otb100 and 0.31 eao on vot2015 with Youtube-BB dataset
 
 ## Reference
 
