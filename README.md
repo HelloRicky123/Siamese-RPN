@@ -6,49 +6,44 @@ For more details about siameseRPN please refer to the paper : [High Performance 
 
 This repository includes training and tracking codes. 
 
-## News
 
-After use the Youtube-BB dataset, the code can get 0.59 auc on OTB100 and about 0.315 eao on VOT2015. I upload it to the 59version folder. It's trained without warm up.
+
+
+## Results
+
+This project can get 0.626 AUC on OTB100, and can get better result than the [DaSiamRPN](https://github.com/foolwood/DaSiamRPN) on 46 videos. Test results of 50 trained models on OTB100 are available in the eval_result.json. The best is the 38 epoch.
+
 
 ## Data preparation:
 
-python bin/create_dataset.py --data-dir /dataset_ssd/ILSVRC2015 --output-dir /dataset_ssd/vid15rpn_finetune
+You should first get VID dataset and youtube-bb dataset. This process is a little troublesome. The part of code has not been formatted by now.
 
-python bin/create_lmdb.py --data-dir /dataset_ssd/vid15rpn_finetune --output-dir /dataset_ssd/vid15rpn_finetune.lmdb
+python bin/create_dataset_ytbid.py --vid-dir /PATH/TO/ILSVRC2015 --ytb-dir /PATH/TO/YT-BB --output-dir /PATH/TO/SAVE_DATA --num_threads 6
+
+python bin/create_lmdb.py --data-dir /PATH/TO/SAVE_DATA --output-dir /PATH/TO/RESULT.lmdb --num_threads 12
 
 ## Traing phase:
 
-CUDA_VISIBLE_DEVICES=2 python bin/train_siamfc.py --data_dir /dataset_ssd/vid15rpn_large
+python bin/train_siamrpn.py --data_dir /PATH/TO/SAVE_DATA
 
 ## Test phase:
 
-CUDA_VISIBLE_DEVICES=2 python bin/test_OTB.py -ms ./models/siamrpn_* -v cvpr2013
+Change the data_path first in the test_OTB.py, then run:
+
+python bin/test_OTB.py -ms /PATH/TO/MODEL -v cvpr2013
+
+
+## Environment:
 
 python version == 3.6.5
 
 pytorch version == 1.0.0
 
-Without using imagenet pretrain or youtube-bb dataset, this code can get 0.545 auc on OTB50, and 0.22 EAO on VOT2015. The paper's model can get 0.33 EAO on VOT2017 without these.
+## Model Download:
 
-We are still trying to reimplement the results in paper.
+Pretrained model on Imagenet: https://drive.google.com/drive/folders/1HJOvl_irX3KFbtfj88_FVLtukMI1GTCR
 
-If you found any bug or have any suggestion about this code, hope you can tell us. 
-
-My email address is zhangruiqi429@gmail.com. 
-
-## Existing bugs
-
-There are still some bugs in this code getting 0.54 AUC on OTB50, but changing these bugs doesn't get improvement by now. 
-
-1，Trained with cv2.BGR2RGB,test without it.
-
-2，Only load former 3 layers and didn't freeze the BN layers' parameters.
-
-3，Use warm epochs to avoid grad explosion, can use grad clip instead.
-
-## update
-
-can get 0.605 auc on otb100 and 0.31 eao on vot2015 with Youtube-BB dataset
+Model with 0.626 AUC: https://pan.baidu.com/s/1vSvTqxaFwgmZdS00U3YIzQ  keyword:v91k
 
 ## Reference
 

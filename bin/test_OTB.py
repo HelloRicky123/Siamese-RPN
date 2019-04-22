@@ -9,8 +9,11 @@ import setproctitle
 import functools
 import multiprocessing as mp
 import matplotlib.pyplot as plt
+import sys
 
-from run_SiamRPN import run_SiamRPN
+sys.path.append(os.getcwd())
+
+from net.run_SiamRPN import run_SiamRPN
 from tqdm import tqdm
 from IPython import embed
 from multiprocessing import Pool
@@ -129,6 +132,8 @@ if __name__ == '__main__':
         results[os.path.abspath(model_path)] = {}
         for video_path in tqdm(video_paths, total=len(video_paths)):
             # video_path = video_paths[-10]
+            embed()
+            # video_path =
             groundtruth_path = video_path + '/groundtruth_rect.txt'
             assert os.path.isfile(groundtruth_path), 'groundtruth of ' + video_path + ' doesn\'t exist'
             with open(groundtruth_path, 'r') as f:
@@ -151,7 +156,7 @@ if __name__ == '__main__':
     # ------------ starting evaluation  -----------
     data_path = '/dataset_ssd/OTB/data/'
     results_eval = {}
-    for model in sorted(list(results.keys()), ):
+    for model in sorted(list(results.keys()), key=embeded_numbers_results):
         results_eval[model] = {}
         success_all_video = []
         for video in results[model].keys():
