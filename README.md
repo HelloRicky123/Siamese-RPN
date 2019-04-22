@@ -16,7 +16,7 @@ This project can get 0.626 AUC on OTB100, and can get better result than the [Da
 
 ## Data preparation:
 
-You should first get VID dataset and youtube-bb dataset. This process is a little troublesome. The part of code has not been formatted by now.
+You should first get VID dataset and youtube-bb dataset. This process is a little troublesome. The part of code has not been formatted by now. If any one do this, please give a git pull request.
 
 python bin/create_dataset_ytbid.py --vid-dir /PATH/TO/ILSVRC2015 --ytb-dir /PATH/TO/YT-BB --output-dir /PATH/TO/SAVE_DATA --num_threads 6
 
