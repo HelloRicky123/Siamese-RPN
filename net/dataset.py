@@ -92,11 +92,6 @@ class ImagnetVIDDataset(Dataset):
         label[neg_index] = 0
         return regression_target, label
 
-        # pos_index = np.random.choice(pos_index, config.num_pos)
-        # neg_index = np.random.choice(neg_index, config.neg_pos)
-        # max_index = np.argsort(iou.flatten())[-20:]
-        # boxes = anchors[max_index]
-
     def __getitem__(self, idx):
         all_idx = np.arange(self.num)
         np.random.shuffle(all_idx)
@@ -189,107 +184,14 @@ class ImagnetVIDDataset(Dataset):
             cx = cx_o + np.random.randint(- self.max_translate, self.max_translate + 1)
             gt_cx = cx_o - cx
             gt_cy = cy_o - cy
-            embed()
-            cy = cy_o - 30
-            cx = cx_o - 30
-            gt_cx = cx_o - cx
-            gt_cy = cy_o - cy
 
             instance_img_1, scale = crop_and_pad(instance_img, cx, cy, self.random_crop_size, self.random_crop_size)
-
-            frame = add_box_img(exemplar_img, np.array([[0, 0, exemplar_gt_w, exemplar_gt_h]]), color=(0, 255, 0))
-            cv2.imwrite('exemplar_img.jpg', frame)
-            frame = add_box_img(instance_img_1, np.array([[gt_cx, gt_cy, gt_w, gt_h]]), color=(0, 255, 0))
-            cv2.imwrite('instance_img.jpg', frame)
-
-            # frame = add_box_img(instance_img, np.array([[gt_cx, gt_cy, gt_w, gt_h]]), color=(0, 255, 255))
-            # empty_img = np.zeros_like(frame)
-            # empty_img[:127, :127, :] = exemplar_img_np
-            # show_img = np.hstack([empty_img, frame])
-            # big_img = cv2.resize(show_img, None, fx=2, fy=2)
-            # from lib.visual import visual
-            # vis = visual(port=6008)
-            # vis.plot_img(big_img.transpose(2, 0, 1), win=7, name='a')
-            # embed()
-
-            # frame = add_box_img(frame, np.array([[0, 0, gt_w, gt_h]]), color=(0, 255, 0))
-            embed()
             exemplar_img = self.z_transforms(exemplar_img)
 
             instance_img_1 = self.x_transforms(instance_img_1)
 
             regression_target, conf_target = self.compute_target(self.anchors,
                                                                  np.array(list(map(round, [gt_cx, gt_cy, gt_w, gt_h]))))
-
-            # img = instance_img.numpy().transpose(1, 2, 0)
-            # pos_index = np.where(conf_target == 1)[0]
-            # pos_anchor = self.anchors[pos_index]
-            # frame = add_box_img(img, pos_anchor)
-            # frame = add_box_img(frame, np.array([[gt_cx, gt_cy, gt_w, gt_h]]), color=(0, 255, 255))
-            #
-            # # debug the gt_box with original box
-            # title = instance_name.split('/')[-1]
-            # img = instance_img.numpy().transpose(1, 2, 0)
-            # box = np.array([gt_cx, gt_cy, gt_w, gt_h])[None, :]
-            # frame = add_box_img(img, box)
-            # if 'train' in instance_name:
-            #     img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
-            #     img_path = glob.glob('/dataset_ssd_quick/ILSVRC2015/Data/VID/train/ILSVRC2015_VID_train_*/'
-            #                          + video + '/' + img_name)[0]
-            #     xml_path = glob.glob('/dataset_ssd_quick/ILSVRC2015/Annotations/VID/train/ILSVRC2015_VID_train_*/'
-            #                          + video + '/' + img_name[:6] + '*')[0]
-            #     tree = ET.parse(xml_path)
-            #     root = tree.getroot()
-            #     bboxes = []
-            #     image = cv2.imread(img_path)
-            #     for obj in root.iter('object'):
-            #         bbox = obj.find('bndbox')
-            #         bbox = list(map(int, [bbox.find('xmin').text,
-            #                               bbox.find('ymin').text,
-            #                               bbox.find('xmax').text,
-            #                               bbox.find('ymax').text]))
-            #         x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
-            #         y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
-            #         w = bbox[2] - bbox[0]
-            #         h = bbox[3] - bbox[1]
-            #         bbox = [x_ctr, y_ctr, w, h]
-            #         bboxes.append(bbox)
-            #     frame2 = add_box_img(image, np.array(bboxes))
-            #     frame = frame[:, :, ::-1]
-            #     show_img = np.hstack(
-            #         [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
-            #          frame2])
-            # else:
-            #     img_name = '.'.join([instance_name.split('/')[-1].split('.')[0], 'JPEG'])
-            #     img_path = glob.glob('/dataset_ssd_quick/ILSVRC2015/Data/VID/val/'
-            #                          + video + '/' + img_name)[0]
-            #     xml_path = glob.glob('/dataset_ssd_quick/ILSVRC2015/Annotations/VID/val/'
-            #                          + video + '/' + img_name[:6] + '*')[0]
-            #     tree = ET.parse(xml_path)
-            #     root = tree.getroot()
-            #     bboxes = []
-            #     image = cv2.imread(img_path)
-            #     for obj in root.iter('object'):
-            #         bbox = obj.find('bndbox')
-            #         bbox = list(map(int, [bbox.find('xmin').text,
-            #                               bbox.find('ymin').text,
-            #                               bbox.find('xmax').text,
-            #                               bbox.find('ymax').text]))
-            #         x_ctr = (bbox[0] + bbox[2]) / 2 - image.shape[1] / 2
-            #         y_ctr = (bbox[1] + bbox[3]) / 2 - image.shape[0] / 2
-            #         w = bbox[2] - bbox[0]
-            #         h = bbox[3] - bbox[1]
-            #         box = [x_ctr, y_ctr, w, h]
-            #         bboxes.append(box)
-            #     frame2 = add_box_img(image, np.array(bboxes))
-            #     frame = frame[:, :, ::-1]
-            #     show_img = np.hstack(
-            #         [cv2.resize(frame, None, fx=frame2.shape[0] / frame.shape[0], fy=frame2.shape[0] / frame.shape[0]),
-            #          frame2])
-            # cv2.imwrite('gt_box.jpg', show_img)
-            # embed()
-            # cv2.waitKey(30)
-
             return exemplar_img, instance_img_1, regression_target, conf_target.astype(np.int64)
 
     def draw_img(self, img, boxes, name='1.jpg', color=(0, 255, 0)):
