@@ -20,6 +20,9 @@ You should first get VID dataset and youtube-bb dataset. This process is a littl
 
 python bin/create_dataset_ytbid.py --vid-dir /PATH/TO/ILSVRC2015 --ytb-dir /PATH/TO/YT-BB --output-dir /PATH/TO/SAVE_DATA --num_threads 6
 
+The command above will get a dataset, I put the dataset in the baiduyundisk. Use this data to create lmdb.
+链接:https://pan.baidu.com/s/1QnQEM_jtc3alX8RyZ3i4-g  密码:myq4
+
 python bin/create_lmdb.py --data-dir /PATH/TO/SAVE_DATA --output-dir /PATH/TO/RESULT.lmdb --num_threads 12
 
 ## Traing phase:
