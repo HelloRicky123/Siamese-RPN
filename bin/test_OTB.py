@@ -94,10 +94,12 @@ if __name__ == '__main__':
                         help='the path of models or the path of a model or folder')
     parser.add_argument('--videos', '-v', dest='videos')  # choices=['tb50', 'tb100', 'cvpr2013']
     parser.add_argument('--save_name', '-n', dest='save_name', default='result.json')
+    parser.add_argument('--data_path', '-d', dest='data_path', default='/dataset_ssd/OTB/data/')
     args = parser.parse_args()
+    model_paths = [1, 2, 3]
 
     # ------------ prepare data  -----------
-    data_path = '/dataset_ssd/OTB/data/'
+    data_path = args.data_path
     if '50' in args.videos:
         direct_file = data_path + 'tb_50.txt'
     elif '100' in args.videos:
@@ -112,27 +114,28 @@ if __name__ == '__main__':
     video_paths = [data_path + x for x in video_names]
 
     # ------------ prepare models  -----------
-    input_paths = [os.path.abspath(x) for x in args.model_paths]
-    model_paths = []
-    for input_path in input_paths:
-        if os.path.isdir(input_path):
-            input_path = os.path.abspath(input_path)
-            model_path = sorted([x for x in os.listdir(input_path) if 'pth' in x], key=embeded_numbers)
-            model_path = [input_path + '/' + x for x in model_path]
-            model_paths.extend(model_path)
-        elif os.path.isfile(input_path):
-            model_path = os.path.abspath(input_path)
-            model_paths.append(model_path)
-        else:
-            raise ValueError('model_path setting wrong')
+    # input_paths = [os.path.abspath(x) for x in args.model_paths]
+    # model_paths = []
+    # for input_path in input_paths:
+    #     if os.path.isdir(input_path):
+    #         input_path = os.path.abspath(input_path)
+    #         model_path = sorted([x for x in os.listdir(input_path) if 'pth' in x], key=embeded_numbers)
+    #         model_path = [input_path + '/' + x for x in model_path]
+    #         model_paths.extend(model_path)
+    #     elif os.path.isfile(input_path):
+    #         model_path = os.path.abspath(input_path)
+    #         model_paths.append(model_path)
+    #     else:
+    #         raise ValueError('model_path setting wrong')
 
     # ------------ starting validation  -----------
     results = {}
     for model_path in tqdm(model_paths, total=len(model_paths)):
-        results[os.path.abspath(model_path)] = {}
+        # results[os.path.abspath(model_path)] = {}
+        results[model_path] = {}
+
         for video_path in tqdm(video_paths, total=len(video_paths)):
             # video_path = video_paths[-10]
-            embed()
             # video_path =
             groundtruth_path = video_path + '/groundtruth_rect.txt'
             assert os.path.isfile(groundtruth_path), 'groundtruth of ' + video_path + ' doesn\'t exist'
@@ -154,7 +157,6 @@ if __name__ == '__main__':
     json.dump(results, open(args.save_name, 'w'))
 
     # ------------ starting evaluation  -----------
-    data_path = '/dataset_ssd/OTB/data/'
     results_eval = {}
     for model in sorted(list(results.keys()), key=embeded_numbers_results):
         results_eval[model] = {}

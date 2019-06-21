@@ -19,11 +19,11 @@ torch.set_num_threads(1)  # otherwise pytorch will take all cpus
 class SiamRPNTracker:
     def __init__(self, model_path):
         self.model = SiameseAlexNet()
-        checkpoint = torch.load(model_path)
-        if 'model' in checkpoint.keys():
-            self.model.load_state_dict(torch.load(model_path)['model'])
-        else:
-            self.model.load_state_dict(torch.load(model_path))
+        # checkpoint = torch.load(model_path)
+        # if 'model' in checkpoint.keys():
+        #     self.model.load_state_dict(torch.load(model_path)['model'])
+        # else:
+        #     self.model.load_state_dict(torch.load(model_path))
         self.model = self.model.cuda()
         self.model.eval()
         self.transforms = transforms.Compose([
@@ -117,10 +117,6 @@ class SiamRPNTracker:
         pscore = penalty * score_pred
         pscore = pscore * (1 - config.window_influence) + self.window * config.window_influence
         best_pscore_id = np.argmax(pscore)
-        img = add_box_img(instance_img_np,self.anchors[best_pscore_id])
-        img = add_box_img(img,box_pred[best_pscore_id, :],color=(0,255,255))
-
-        embed()
 
         target = box_pred[best_pscore_id, :] / scale_x
 

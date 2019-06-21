@@ -43,7 +43,6 @@ def run_SiamRPN(seq_path, model_path, init_box):
         else:
             bbox, score = tracker.update(frame)  # x,y,w,h
             bbox = np.array(bbox)
-            embed()
         res.append(list((bbox[0] - bbox[2] / 2 + 1 / 2, bbox[1] - bbox[3] / 2 + 1 / 2, bbox[2], bbox[3])))
     duration = time.clock() - tic
     result = {}
