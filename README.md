@@ -1,3 +1,5 @@
+We are recruiting interns, please send your resume to my email zhangruiqi@megvii.com. 
+
 # Siamese-RPN
 
 This is a PyTorch implementation of SiameseRPN. This project is mainly based on [SiamFC-PyTorch](https://github.com/StrangerZhang/SiamFC-PyTorch) and [DaSiamRPN](https://github.com/foolwood/DaSiamRPN).
