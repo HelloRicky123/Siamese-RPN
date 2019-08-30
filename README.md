@@ -1,5 +1,33 @@
 We are recruiting interns, please send your resume to my email zhangruiqi@megvii.com. 
 
+[实习招聘]旷视Face++ 研究院video组 见习研究员
+
+工作职责：
+负责实际场景中图像相关深度学习算法研究与应用（检测，识别等方向）
+
+期望要求：
+1、具有计算机视觉，图形学等相关专业在读本科或以上学历
+2、熟悉深度学习基础算法
+3、熟悉常用的目标检测算法，如Faster-RCNN、 RetinaNet等
+4、有一定编程基础，擅长python编程
+5、熟悉caffe、Tensorflow、PyTorch等深度学习框架
+
+加分项：
+1、具备ACM等大赛奖牌
+2、具有实际深度学习相关项目经验或实习经历
+3、在ICCV、CVPR、ECCV、NIPS等相关会议取得过优秀成绩或发表论文
+4、熟悉文字检测与识别相关算法，如EAST，textboxes，CRNN等
+5、能够长期实习（六个月或以上）
+
+实习时间：
+每周4天以上（工作日），能够实习三个月以上
+
+实习地点：
+北京市海淀区融科资讯中心
+
+联系方式：
+shiyuxuan@megvii.com
+
 # Siamese-RPN
 
 This is a PyTorch implementation of SiameseRPN. This project is mainly based on [SiamFC-PyTorch](https://github.com/StrangerZhang/SiamFC-PyTorch) and [DaSiamRPN](https://github.com/foolwood/DaSiamRPN).
